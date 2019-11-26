@@ -1,0 +1,31 @@
+version: '3.4'
+
+services:
+  #app: &app
+    #image: python:3.7.2-slim
+    #command: bash
+    #volumes:
+      #- .:/app
+      #- pip-data:/usr/local/lib/python3.7/site-packages
+      #- bin-data:/usr/local/bin
+    #environment:
+      #- DATABASE_URL=postgres://postgres@db/test_db
+      #- POETRY_VIRTUALENVS_CREATE=false
+    #working_dir: '/app'
+    #depends_on:
+      #- db
+
+  db:
+    image: 'postgres:11.1'
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=test_db
+    ports:
+      - 6432:5432
+
+
+volumes:
+  pg-data:
+  pip-data:
+  bin-data:

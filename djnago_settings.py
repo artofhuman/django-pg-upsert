@@ -12,8 +12,11 @@ INSTALLED_APPS = [
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'django_test.sqlite',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'test_db',
+        'USER' : 'postgres',
+        'HOST' : '127.0.0.1',
+        'PORT' : '6432'
     }
 }
 

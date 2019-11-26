@@ -6,4 +6,3 @@ from .starwars import models
 def test_upsert():
     pet = models.Pet(age=12)
     pet.save()
-    pass
