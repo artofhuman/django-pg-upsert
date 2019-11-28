@@ -20,13 +20,19 @@ def _get_field_value(entry, field):
     return _quote(field.get_db_prep_save(value, connection))
 
 
-class InsertSql:
-    def __init__(self, entry):
+class UpsertSql:
+    def __init__(self, entry, constraint=None, fields=None):
         self._entry = entry
         self._model = entry.__class__
+        self._constraint = constraint
+        self._fields = fields
+
+        if constraint and fields:
+            raise ArgumentError('only one of constraint or fields args should be passed')
 
     def to_sql(self):
         insert_data = self._get_insert_data()
+
         field_names_sql = ", ".join(insert_data.keys())
         values_sql = ", ".join(insert_data.values())
 
@@ -34,13 +40,26 @@ class InsertSql:
             table_name=self._db_table_name,
             field_names_sql=field_names_sql,
             values_sql=values_sql,
-            conflict_sql="",
-            on_conflict="DO NOTHING",
+            conflict_sql=self._conflict_sql,
+            on_conflict=self._on_conflict_sql,
             return_sql="RETURNING *",
-            # unique_field_names_sql="ON CONSTRAINT " + constraint
         )
 
         return sql
+
+    @property
+    def _conflict_sql(self):
+        if self._constraint:
+            return "ON CONSTRAINT " + self._constraint
+
+        if self._fields:
+            return "({})".format(', '.join(self._fields))
+
+        return ''
+
+    @property
+    def _on_conflict_sql(self):
+        return 'DO NOTHING'
 
     @property
     def _db_table_name(self):
@@ -57,8 +76,8 @@ class InsertSql:
         return insert_data
 
 
-def insert_conflict(entry, constraint=None):
-    insert = InsertSql(entry)
+def insert_conflict(entry, constraint=None, fields=None):
+    insert = UpsertSql(entry, constraint, fields)
 
     with connection.cursor() as cursor:
         cursor.execute(insert.to_sql())
