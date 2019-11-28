@@ -10,7 +10,6 @@ SQL = (
     " ON CONFLICT {conflict_sql} {on_conflict} {return_sql}"
 )
 
-
 def _quote(value):
     return f"'{value}'"
 
@@ -28,7 +27,7 @@ class UpsertSql:
         self._fields = fields
 
         if constraint and fields:
-            raise ArgumentError('only one of constraint or fields args should be passed')
+            raise RuntimeError('only one of constraint or fields args should be passed')
 
     def to_sql(self):
         insert_data = self._get_insert_data()

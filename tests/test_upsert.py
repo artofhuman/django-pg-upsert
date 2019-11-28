@@ -78,3 +78,7 @@ class TestInsertConflict:
     def test_pass_unknown_field(self, pet):
         with pytest.raises(ProgrammingError):
             insert_conflict(pet, fields=['unknown'])
+
+    def test_pass_constraint_and_fields_together(self, pet):
+        with pytest.raises(RuntimeError):
+            insert_conflict(pet, fields=['name'], constraint='starwars_pet_name_key')
