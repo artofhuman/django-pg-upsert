@@ -20,7 +20,7 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age") VALUES (%s, %s, %s) ON CONFLICT  DO NOTHING',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age") VALUES (%s, %s, %s) ON CONFLICT DO NOTHING',
                 ("dog", None, 12),
             )
         ]
@@ -68,6 +68,11 @@ class TestInsertConflict:
 
         with pytest.raises(ProgrammingError):
             Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, constraint='unknown')
+
+    def test_not_overides_default_operation(self, pet):
+        Pet.objects.insert_conflict(data={"name": "yoda", "age": 12}, constraint='starwars_pet_name_key')
+
+        pet.save()
 
     # def test_upsert_with_field_names(self, pet):
         # insert_conflict(pet, fields=["name"])
