@@ -17,6 +17,9 @@ class IgnoreConflictSuffix:
     def as_sql(self):
         return self._SQL.format(conflict_sql=self._conflict_sql)
 
+    def has_conflict_target(self):
+        return bool(self._constraint)
+
     @property
     def _conflict_sql(self) -> str:
         if self._constraint:
@@ -26,13 +29,25 @@ class IgnoreConflictSuffix:
 
 
 class SQLUpsertCompiler(django.db.models.sql.compiler.SQLInsertCompiler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    _REWRITE_PART = 'ON CONFLICT DO NOTHING'
 
-        self.connection.ops.ignore_conflicts_suffix_sql = self.ignore_conflicts_suffix_sql
+    ignore_conflicts_suffix = None
 
-    def ignore_conflicts_suffix_sql(self, ignore_conflicts: IgnoreConflictSuffix):
-        return ignore_conflicts.as_sql()
+    def as_sql(self ):
+        sql = super().as_sql()
+
+        if self.ignore_conflicts_suffix.has_conflict_target():
+            conflict_part = self.ignore_conflicts_suffix.as_sql()
+
+            return [
+                (self._rewrite_sql_statement(query, conflict_part), params)
+                for query, params in sql
+            ]
+        else:
+            return sql
+
+    def _rewrite_sql_statement(self, query: str, new_conflict_part):
+        return query.replace(self._REWRITE_PART, new_conflict_part)
 
 
 class UpsertQuery(django.db.models.sql.InsertQuery):
@@ -48,14 +63,13 @@ class Upsert:
     def __init__(self, obj, db=None, constraint=None):
         self._obj = obj
         self._db = db
-        self.constraint = constraint
+        self._ignore_conflicts = IgnoreConflictSuffix(constraint)
 
         if self._db is None:
             self._db = self._model._default_manager.db
 
     def as_sql(self):
-        sql = self._get_compiled_query().as_sql()
-        return sql
+        return self._get_compiled_query().as_sql()
 
     def execute(self):
         return self._get_compiled_query().execute_sql()
@@ -63,12 +77,13 @@ class Upsert:
     def _get_compiled_query(self):
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
 
-        ignore_conflicts = IgnoreConflictSuffix(self.constraint)
-
-        query = UpsertQuery(self._model, ignore_conflicts=ignore_conflicts)
+        query = UpsertQuery(self._model, ignore_conflicts=True)
         query.insert_values(fields, [self._obj], raw=True)
 
-        return query.get_compiler(self._db)
+        compiler = query.get_compiler(self._db)
+        compiler.ignore_conflicts_suffix = self._ignore_conflicts
+
+        return compiler
 
     @property
     def _meta(self):

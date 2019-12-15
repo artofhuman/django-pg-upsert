@@ -2,3 +2,4 @@
 .pytest_cache/
 django_pg_upsert.egg-info/
 _pycache__
+dist/
