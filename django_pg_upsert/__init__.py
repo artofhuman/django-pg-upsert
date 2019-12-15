@@ -1,82 +1,86 @@
 __version__ = "0.1.0"
 
 
-from django.db import connection
+import django.db
+from django.db import connection, connections
+from django.db import models, router
+from django.db.models.sql import InsertQuery
+from django.db.models.sql.compiler import SQLInsertCompiler
 
 
-SQL = (
-    "INSERT INTO {table_name} ({field_names_sql})"
-    " VALUES ({values_sql})"
-    " ON CONFLICT {conflict_sql} {on_conflict} {return_sql}"
-)
+class IgnoreConflictSuffix:
+    _SQL = "ON CONFLICT {conflict_sql} DO NOTHING"
 
-def _quote(value):
-    return f"'{value}'"
-
-
-def _get_field_value(entry, field):
-    value = getattr(entry, field.attname)
-    return _quote(field.get_db_prep_save(value, connection))
-
-
-class UpsertSql:
-    def __init__(self, entry, constraint=None, fields=None):
-        self._entry = entry
-        self._model = entry.__class__
+    def __init__(self, constraint=None):
         self._constraint = constraint
-        self._fields = fields
 
-        if constraint and fields:
-            raise RuntimeError('only one of constraint or fields args should be passed')
-
-    def to_sql(self):
-        insert_data = self._get_insert_data()
-
-        field_names_sql = ", ".join(insert_data.keys())
-        values_sql = ", ".join(insert_data.values())
-
-        sql = SQL.format(
-            table_name=self._db_table_name,
-            field_names_sql=field_names_sql,
-            values_sql=values_sql,
-            conflict_sql=self._conflict_sql,
-            on_conflict=self._on_conflict_sql,
-            return_sql="RETURNING *",
-        )
-
-        return sql
+    def as_sql(self):
+        return self._SQL.format(conflict_sql=self._conflict_sql)
 
     @property
-    def _conflict_sql(self):
+    def _conflict_sql(self) -> str:
         if self._constraint:
             return "ON CONSTRAINT " + self._constraint
 
-        if self._fields:
-            return "({})".format(', '.join(self._fields))
-
         return ''
 
-    @property
-    def _on_conflict_sql(self):
-        return 'DO NOTHING'
+
+class SQLUpsertCompiler(django.db.models.sql.compiler.SQLInsertCompiler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.connection.ops.ignore_conflicts_suffix_sql = self.ignore_conflicts_suffix_sql
+
+    def ignore_conflicts_suffix_sql(self, ignore_conflicts: IgnoreConflictSuffix):
+        return ignore_conflicts.as_sql()
+
+
+class UpsertQuery(django.db.models.sql.InsertQuery):
+    def get_compiler(self, using=None, connection=None):
+        if using is None and connection is None:
+            raise ValueError("Need either using or connection")
+        if using:
+            connection = connections[using]
+        return SQLUpsertCompiler(self, connection, using)
+
+
+class Upsert:
+    def __init__(self, obj, db=None, constraint=None):
+        self._obj = obj
+        self._db = db
+        self.constraint = constraint
+
+        if self._db is None:
+            self._db = self._model._default_manager.db
+
+    def as_sql(self):
+        sql = self._get_compiled_query().as_sql()
+        return sql
+
+    def execute(self):
+        return self._get_compiled_query().execute_sql()
+
+    def _get_compiled_query(self):
+        fields = [f for f in self._meta.concrete_fields if not f.auto_created]
+
+        ignore_conflicts = IgnoreConflictSuffix(self.constraint)
+
+        query = UpsertQuery(self._model, ignore_conflicts=ignore_conflicts)
+        query.insert_values(fields, [self._obj], raw=True)
+
+        return query.get_compiler(self._db)
 
     @property
-    def _db_table_name(self):
-        return self._model._meta.db_table
+    def _meta(self):
+        return self._obj._meta
 
-    def _get_insert_data(self):
-        insert_data = {}
-
-        fields = self._model._meta.fields
-
-        for field in fields:
-            if not field.auto_created:
-                insert_data[field.attname] = _get_field_value(self._entry, field)
-        return insert_data
+    @property
+    def _model(self):
+        return self._meta.model
 
 
-def insert_conflict(entry, constraint=None, fields=None):
-    insert = UpsertSql(entry, constraint, fields)
+class Manager(django.db.models.Manager):
+    def insert_conflict(self, data, constraint=None):
+        obj = self.model(**data)
 
-    with connection.cursor() as cursor:
-        cursor.execute(insert.to_sql())
+        return Upsert(obj, self.db, constraint).execute()
