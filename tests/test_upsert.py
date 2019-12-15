@@ -5,7 +5,6 @@ from .starwars import models
 from .starwars.models import Pet
 from django_pg_upsert import Upsert
 
-# TODO: test right tipycasting
 # TODO: test auto filled fields created_at
 # TODO: check with associations
 
@@ -21,18 +20,20 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age") VALUES (%s, %s, %s) ON CONFLICT DO NOTHING',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age") VALUES (%s, %s, %s) ON CONFLICT  DO NOTHING',
                 ("dog", None, 12),
             )
         ]
 
-    # def test_with_constraint(self, pet):
-        # sql = UpsertSql(pet, constraint="starwars_pet_name_key").to_sql()
+    def test_with_constraint(self, pet):
+        sql = Upsert(pet, constraint="starwars_pet_name_key").as_sql()
 
-        # assert (
-            # sql
-            # == "INSERT INTO starwars_pet (name, age) VALUES ('dog', '12') ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING RETURNING *"
-        # )
+        assert sql == [
+            (
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age") VALUES (%s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',
+                ("dog", None, 12),
+            )
+        ]
 
     # def test_with_fields(self, pet):
         # sql = UpsertSql(pet, fields=["name"]).to_sql()
@@ -45,7 +46,7 @@ class TestSqlExpression:
 
 @pytest.mark.django_db
 class TestInsertConflict:
-    def assert_create_one_record(self):
+    def assert_create_single_record(self):
         records = models.Pet.objects.all()
 
         assert len(records) == 1
@@ -57,22 +58,22 @@ class TestInsertConflict:
         Pet.objects.insert_conflict(data={"name": "dog", "age": 12})
         Pet.objects.insert_conflict(data={"name": "dog", "age": 20})
 
-        self.assert_create_one_record()
+        self.assert_create_single_record()
 
-    # def test_upsert_with_constraint_name(self, pet):
-        # insert_conflict(pet, constraint="starwars_pet_name_key")
-        # insert_conflict(pet, constraint="starwars_pet_name_key")
+    def test_upsert_with_constraint_name(self, pet):
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 12}, constraint='starwars_pet_name_key')
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, constraint='starwars_pet_name_key')
 
-        # self.assert_create_one_record()
+        self.assert_create_single_record()
 
-        # with pytest.raises(ProgrammingError):
-            # insert_conflict(pet, constraint="unknown")
+        with pytest.raises(ProgrammingError):
+            Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, constraint='unknown')
 
     # def test_upsert_with_field_names(self, pet):
         # insert_conflict(pet, fields=["name"])
         # insert_conflict(pet, fields=["name"])
 
-        # self.assert_create_one_record()
+        # self.assert_create_single_record()
 
     # def test_pass_field_without_uniq(self, pet):
         # with pytest.raises(ProgrammingError):
