@@ -33,7 +33,7 @@ class SQLUpsertCompiler(django.db.models.sql.compiler.SQLInsertCompiler):
 
     ignore_conflicts_suffix = None
 
-    def as_sql(self ):
+    def as_sql(self):
         sql = super().as_sql()
 
         if self.ignore_conflicts_suffix.has_conflict_target():
@@ -78,7 +78,7 @@ class Upsert:
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
 
         query = UpsertQuery(self._model, ignore_conflicts=True)
-        query.insert_values(fields, [self._obj], raw=True)
+        query.insert_values(fields, [self._obj], raw=False)
 
         compiler = query.get_compiler(self._db)
         compiler.ignore_conflicts_suffix = self._ignore_conflicts
