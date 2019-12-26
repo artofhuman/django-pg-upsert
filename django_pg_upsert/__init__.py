@@ -94,7 +94,7 @@ class Upsert:
         return self._meta.model
 
 
-class Manager(django.db.models.Manager):
+class PgUpsertManager(django.db.models.Manager):
     def insert_conflict(self, data, constraint=None):
         obj = self.model(**data)
 

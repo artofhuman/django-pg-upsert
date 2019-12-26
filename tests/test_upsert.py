@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from django.db.utils import ProgrammingError
 
 from .starwars import models
-from .starwars.models import Pet
+from .starwars.models import Pet, Human
 from django_pg_upsert import Upsert
 
 # TODO: test auto filled fields created_at
@@ -24,8 +24,8 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at") VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',
-                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0)),
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',
+                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
             )
         ]
 
@@ -34,8 +34,8 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at") VALUES (%s, %s, %s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',
-                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0)),
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',
+                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
             )
         ]
 
@@ -64,11 +64,11 @@ class TestInsertConflict:
 
         self.assert_create_single_record()
 
-    def test_upsert_with_constraint_name(self, pet):
+    def test_upsert_with_constraint_name(self):
         Pet.objects.insert_conflict(
             data={"name": "dog", "age": 12}, constraint="starwars_pet_name_key"
         )
-        Pet.objects.insert_conflict(
+        res = Pet.objects.insert_conflict(
             data={"name": "dog", "age": 20}, constraint="starwars_pet_name_key"
         )
 
@@ -84,7 +84,17 @@ class TestInsertConflict:
             data={"name": "yoda", "age": 12}, constraint="starwars_pet_name_key"
         )
 
-        pet.save()
+        models.Pet(age=12, name="dog").save()
+
+    def test_with_fk_relations(self):
+        owner = Human(name='John')
+        owner.save()
+
+        owner.pet_set.insert_conflict(data={"name": "dog", "age": 12})
+        owner.pet_set.insert_conflict(data={"name": "dog", "age": 12})
+
+        self.assert_create_single_record()
+
 
     # def test_upsert_with_field_names(self, pet):
     # insert_conflict(pet, fields=["name"])

@@ -1,9 +1,9 @@
 from django.db import models
-from django_pg_upsert import Manager as PgManager
+from django_pg_upsert import PgUpsertManager
 
 
-class Manager(PgManager):
-    pass
+class Human(models.Model):
+    name = models.CharField(max_length=100)
 
 
 class Pet(models.Model):
@@ -13,4 +13,6 @@ class Pet(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = Manager()
+    objects = PgUpsertManager()
+
+    owner = models.ForeignKey(Human, on_delete=models.CASCADE, null=True)

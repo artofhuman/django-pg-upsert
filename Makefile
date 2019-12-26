@@ -14,6 +14,3 @@ test:
 
 install:
 	poetry install
-
-bash:
-	${DOCKER_COMPOSE_RUN} app bash
