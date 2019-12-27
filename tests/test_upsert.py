@@ -4,12 +4,9 @@ import pytest
 from freezegun import freeze_time
 from django.db.utils import ProgrammingError
 
+import django_pg_upsert
 from .starwars import models
 from .starwars.models import Pet, Human
-from django_pg_upsert import Upsert
-
-# TODO: test auto filled fields created_at
-# TODO: check with associations
 
 
 @pytest.fixture
@@ -20,7 +17,7 @@ def pet():
 @freeze_time('2020-01-01 12:00:00')
 class TestSqlExpression:
     def test_without_pass_params(self, pet):
-        sql = Upsert(pet).as_sql()
+        sql = django_pg_upsert.Upsert(pet).as_sql()
 
         assert sql == [
             (
@@ -30,7 +27,7 @@ class TestSqlExpression:
         ]
 
     def test_with_constraint(self, pet):
-        sql = Upsert(pet, constraint="starwars_pet_name_key").as_sql()
+        sql = django_pg_upsert.Upsert(pet, constraint="starwars_pet_name_key").as_sql()
 
         assert sql == [
             (
@@ -40,7 +37,7 @@ class TestSqlExpression:
         ]
 
     def test_with_fields(self, pet):
-        sql = Upsert(pet, fields=['name']).as_sql()
+        sql = django_pg_upsert.Upsert(pet, fields=['name']).as_sql()
 
         assert sql == [
             (
@@ -116,3 +113,21 @@ class TestInsertConflict:
                 fields=["name"],
                 constraint='starwars_pet_name_key'
             )
+
+    def test_standalone_method(self, pet):
+        django_pg_upsert.insert_conflict(pet)
+        django_pg_upsert.insert_conflict(pet)
+
+        self.assert_create_single_record()
+
+    def test_standalone_method_with_constraint(self, pet):
+        django_pg_upsert.insert_conflict(pet, constraint='starwars_pet_name_key')
+        django_pg_upsert.insert_conflict(pet, constraint='starwars_pet_name_key')
+
+        self.assert_create_single_record()
+
+    def test_standalone_method_with_fields(self, pet):
+        django_pg_upsert.insert_conflict(pet, fields=['name'])
+        django_pg_upsert.insert_conflict(pet, fields=['name'])
+
+        self.assert_create_single_record()

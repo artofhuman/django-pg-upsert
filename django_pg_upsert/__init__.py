@@ -107,3 +107,8 @@ class PgUpsertManager(django.db.models.Manager):
         obj = self.model(**data)
 
         return Upsert(obj, self.db, constraint, fields).execute()
+
+
+def insert_conflict(obj, constraint=None, fields=None):
+    db = obj._meta.default_manager.db
+    return Upsert(obj, db, constraint, fields).execute()
