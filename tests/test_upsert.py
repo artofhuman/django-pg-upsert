@@ -39,13 +39,15 @@ class TestSqlExpression:
             )
         ]
 
-    # def test_with_fields(self, pet):
-    # sql = UpsertSql(pet, fields=["name"]).to_sql()
+    def test_with_fields(self, pet):
+        sql = Upsert(pet, fields=['name']).as_sql()
 
-    # assert (
-    # sql
-    # == "INSERT INTO starwars_pet (name, age) VALUES ('dog', '12') ON CONFLICT (name) DO NOTHING RETURNING *"
-    # )
+        assert sql == [
+            (
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO NOTHING',
+                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
+            )
+        ]
 
 
 @pytest.mark.django_db
@@ -96,20 +98,21 @@ class TestInsertConflict:
         self.assert_create_single_record()
 
 
-    # def test_upsert_with_field_names(self, pet):
-    # insert_conflict(pet, fields=["name"])
-    # insert_conflict(pet, fields=["name"])
+    def test_upsert_with_field_names(self):
+        Pet.objects.insert_conflict(
+            data={"name": "dog", "age": 12}, fields=["name"]
+        )
 
-    # self.assert_create_single_record()
+        Pet.objects.insert_conflict(
+            data={"name": "dog", "age": 20}, fields=["name"]
+        )
 
-    # def test_pass_field_without_uniq(self, pet):
-    # with pytest.raises(ProgrammingError):
-    # insert_conflict(pet, fields=["age", "name"])
+        self.assert_create_single_record()
 
-    # def test_pass_unknown_field(self, pet):
-    # with pytest.raises(ProgrammingError):
-    # insert_conflict(pet, fields=["unknown"])
-
-    # def test_pass_constraint_and_fields_together(self, pet):
-    # with pytest.raises(RuntimeError):
-    # insert_conflict(pet, fields=["name"], constraint="starwars_pet_name_key")
+    def test_use_constraint_and_fields_in_same_time(self):
+        with pytest.raises(ValueError):
+            Pet.objects.insert_conflict(
+                data={"name": "dog", "age": 20},
+                fields=["name"],
+                constraint='starwars_pet_name_key'
+            )
