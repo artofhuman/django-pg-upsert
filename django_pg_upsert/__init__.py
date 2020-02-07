@@ -77,18 +77,21 @@ class Upsert:
             self._db = self._model._default_manager.db
 
     def as_sql(self):
-        return self._get_compiled_query().as_sql()
+        return self._get_compiler().as_sql()
 
     def execute(self):
-        return self._get_compiled_query().execute_sql()
+        return self._get_compiler().execute_sql(return_id=True)
 
-    def _get_compiled_query(self):
+    def _get_compiler(self):
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
 
         query = UpsertQuery(self._model, ignore_conflicts=True)
         query.insert_values(fields, [self._obj], raw=False)
 
         compiler = query.get_compiler(self._db)
+
+        compiler.return_id = True
+
         compiler.ignore_conflicts_suffix = self._ignore_conflicts
 
         return compiler
