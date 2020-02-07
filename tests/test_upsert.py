@@ -127,7 +127,7 @@ class TestInsertConflict:
         self.assert_create_single_record()
 
     def test_standalone_method_with_fields(self, pet):
-        django_pg_upsert.insert_conflict(pet, fields=['name'])
-        django_pg_upsert.insert_conflict(pet, fields=['name'])
+        instance = django_pg_upsert.insert_conflict(pet, fields=['name'])
+        # django_pg_upsert.insert_conflict(pet, fields=['name'])
 
         self.assert_create_single_record()
