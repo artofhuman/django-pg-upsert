@@ -80,7 +80,7 @@ class Upsert:
         return self._get_compiler().as_sql()
 
     def execute(self):
-        return self._get_compiler().execute_sql(return_id=True)
+        return self._get_compiler().execute_sql(return_id=False)
 
     def _get_compiler(self):
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
@@ -88,12 +88,8 @@ class Upsert:
         query = UpsertQuery(self._model, ignore_conflicts=True)
         query.insert_values(fields, [self._obj], raw=False)
 
-        compiler = query.get_compiler(self._db)
-
-        compiler.return_id = True
-
+        compiler: SQLUpsertCompiler = query.get_compiler(self._db)
         compiler.ignore_conflicts_suffix = self._ignore_conflicts
-
         return compiler
 
     @property
@@ -108,7 +104,6 @@ class Upsert:
 class PgUpsertManager(django.db.models.Manager):
     def insert_conflict(self, data, constraint=None, fields=None):
         obj = self.model(**data)
-
         return Upsert(obj, self.db, constraint, fields).execute()
 
 

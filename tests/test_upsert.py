@@ -14,7 +14,7 @@ def pet():
     return models.Pet(age=12, name="dog")
 
 
-@freeze_time('2020-01-01 12:00:00')
+@freeze_time("2020-01-01 12:00:00")
 class TestSqlExpression:
     def test_without_pass_params(self, pet):
         sql = django_pg_upsert.Upsert(pet).as_sql()
@@ -22,7 +22,14 @@ class TestSqlExpression:
         assert sql == [
             (
                 'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',
-                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    None,
+                ),
             )
         ]
 
@@ -32,17 +39,31 @@ class TestSqlExpression:
         assert sql == [
             (
                 'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',
-                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    None,
+                ),
             )
         ]
 
     def test_with_fields(self, pet):
-        sql = django_pg_upsert.Upsert(pet, fields=['name']).as_sql()
+        sql = django_pg_upsert.Upsert(pet, fields=["name"]).as_sql()
 
         assert sql == [
             (
                 'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO NOTHING',
-                ("dog", None, 12, datetime.datetime(2020, 1, 1, 12, 0), datetime.datetime(2020, 1, 1, 12, 0), None),
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    None,
+                ),
             )
         ]
 
@@ -86,7 +107,7 @@ class TestInsertConflict:
         models.Pet(age=12, name="dog").save()
 
     def test_with_fk_relations(self):
-        owner = Human(name='John')
+        owner = Human(name="John")
         owner.save()
 
         owner.pet_set.insert_conflict(data={"name": "dog", "age": 12})
@@ -94,15 +115,10 @@ class TestInsertConflict:
 
         self.assert_create_single_record()
 
-
     def test_upsert_with_field_names(self):
-        Pet.objects.insert_conflict(
-            data={"name": "dog", "age": 12}, fields=["name"]
-        )
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 12}, fields=["name"])
 
-        Pet.objects.insert_conflict(
-            data={"name": "dog", "age": 20}, fields=["name"]
-        )
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, fields=["name"])
 
         self.assert_create_single_record()
 
@@ -111,7 +127,7 @@ class TestInsertConflict:
             Pet.objects.insert_conflict(
                 data={"name": "dog", "age": 20},
                 fields=["name"],
-                constraint='starwars_pet_name_key'
+                constraint="starwars_pet_name_key",
             )
 
     def test_standalone_method(self, pet):
@@ -121,13 +137,12 @@ class TestInsertConflict:
         self.assert_create_single_record()
 
     def test_standalone_method_with_constraint(self, pet):
-        django_pg_upsert.insert_conflict(pet, constraint='starwars_pet_name_key')
-        django_pg_upsert.insert_conflict(pet, constraint='starwars_pet_name_key')
+        django_pg_upsert.insert_conflict(pet, constraint="starwars_pet_name_key")
+        django_pg_upsert.insert_conflict(pet, constraint="starwars_pet_name_key")
 
         self.assert_create_single_record()
 
     def test_standalone_method_with_fields(self, pet):
-        instance = django_pg_upsert.insert_conflict(pet, fields=['name'])
-        # django_pg_upsert.insert_conflict(pet, fields=['name'])
+        instance = django_pg_upsert.insert_conflict(pet, fields=["name"])
 
         self.assert_create_single_record()
