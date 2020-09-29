@@ -10,4 +10,5 @@ env:
 install:
   - pip install -r requirements.txt
 script: 
+  - cd django-pg-upsert/tests
   - python test_upsert.py
