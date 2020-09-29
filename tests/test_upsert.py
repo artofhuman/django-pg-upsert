@@ -4,10 +4,14 @@ import pytest
 from freezegun import freeze_time
 from django.db.utils import ProgrammingError
 
-import django_pg_upsert
-from .starwars import models
-from .starwars.models import Pet, Human
+import sys, os
 
+os.chdir('..')
+from starwars import models
+from starwars.models import Pet, Human
+
+os.chdir('..')
+import django_pg_upsert
 
 @pytest.fixture
 def pet():

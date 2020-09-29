@@ -1,6 +1,8 @@
 from django.db import models
+import os, sys
+print(os.getcwd())
+sys.path.append(os.getcwd())
 from django_pg_upsert import PgUpsertManager
-
 
 class Human(models.Model):
     name = models.CharField(max_length=100)
