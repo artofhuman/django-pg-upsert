@@ -6,7 +6,7 @@ python:
 services:
   - mysql
 env: 
-  -DJANGO=1.8 DB=mysql
+  -DJANGO=1.4.1 DB=mysql
 install:
   - pip install -r requirements.txt
 before_script: 
