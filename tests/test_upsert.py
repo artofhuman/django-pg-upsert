@@ -67,6 +67,22 @@ class TestSqlExpression:
             )
         ]
 
+    def test_with_update(self, pet):
+        sql = django_pg_upsert.Upsert(pet, fields=["name"], update=["age"]).as_sql()
+        assert sql == [
+            (
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0),
+                    None,
+                ),
+            )
+        ]
+
 
 @pytest.mark.django_db
 class TestInsertConflict:
@@ -88,7 +104,7 @@ class TestInsertConflict:
         Pet.objects.insert_conflict(
             data={"name": "dog", "age": 12}, constraint="starwars_pet_name_key"
         )
-        res = Pet.objects.insert_conflict(
+        Pet.objects.insert_conflict(
             data={"name": "dog", "age": 20}, constraint="starwars_pet_name_key"
         )
 
@@ -143,6 +159,31 @@ class TestInsertConflict:
         self.assert_create_single_record()
 
     def test_standalone_method_with_fields(self, pet):
-        instance = django_pg_upsert.insert_conflict(pet, fields=["name"])
-
+        django_pg_upsert.insert_conflict(pet, fields=["name"])
         self.assert_create_single_record()
+
+    def test_update_on_conflict(self, pet):
+        pet.save()
+        Pet.objects.insert_conflict(
+            data={"name": pet.name, "age": 100, "alias_name": "yoda"},
+            constraint="starwars_pet_name_key",
+            update=["age", "alias_name"]
+        )
+
+        records = models.Pet.objects.all()
+        assert len(records) == 1
+        pet.refresh_from_db()
+        assert pet.age == 100
+        assert pet.alias_name == "yoda"
+        assert pet.name == "dog"
+
+    def test_standalone_method_update(self, pet):
+        pet.save()
+        pet.age = 100
+        django_pg_upsert.insert_conflict(pet, fields=["name"], update=["age"])
+        records = models.Pet.objects.all()
+        assert len(records) == 1
+        assert len(records) == 1
+        pet.refresh_from_db()
+        assert pet.age == 100
+        assert pet.name == "dog"

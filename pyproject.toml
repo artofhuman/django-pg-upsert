@@ -10,8 +10,8 @@ Django = "^2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.0"
-pytest-django = '*'
-psycopg2-binary= "=2.8.2"
+pytest-django = '3.7.0'
+psycopg2-binary = "=2.8.6"
 freezegun = "^0.3.12"
 
 [build-system]
