@@ -4,7 +4,7 @@ DOCKER_COMPOSE_RUN := $(DOCKER_COMPOSE) run --rm
 DEFAULT: test
 
 compose-up:
-	${DOCKER_COMPOSE} up
+	${DOCKER_COMPOSE} up -d
 
 compose-down:
 	${DOCKER_COMPOSE} down

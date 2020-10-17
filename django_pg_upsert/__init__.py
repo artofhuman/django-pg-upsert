@@ -9,17 +9,22 @@ from django.db.models.sql.compiler import SQLInsertCompiler
 
 
 class IgnoreConflictSuffix:
-    _SQL = "ON CONFLICT {conflict_sql} DO NOTHING"
+    _SQL = "ON CONFLICT {conflict_sql} {action_sql}"
+    _DO_NOTHING = "DO NOTHING"
 
-    def __init__(self, constraint=None, fields=None):
+    def __init__(self, constraint=None, fields=None, update=None):
         self._constraint = constraint
         self._fields = fields
+        self._update = update
 
         if self._constraint and self._fields:
             raise ValueError('Only fields or constraint args can be used')
 
     def as_sql(self):
-        return self._SQL.format(conflict_sql=self._conflict_sql)
+        return self._SQL.format(
+            conflict_sql=self._conflict_sql,
+            action_sql=self._action_sql
+        )
 
     def has_conflict_target(self):
         return bool(self._constraint) or bool(self._fields)
@@ -34,6 +39,13 @@ class IgnoreConflictSuffix:
             return '(%s)' % fields
 
         return ''
+
+    @property
+    def _action_sql(self) -> str:
+        if self._update:
+            fields = ', '.join([f"{f} = EXCLUDED.{f}" for f in self._update])
+            return f"DO UPDATE SET {fields}"
+        return self._DO_NOTHING
 
 
 class SQLUpsertCompiler(django.db.models.sql.compiler.SQLInsertCompiler):
@@ -68,10 +80,12 @@ class UpsertQuery(django.db.models.sql.InsertQuery):
 
 
 class Upsert:
-    def __init__(self, obj, db=None, constraint=None, fields=None):
+    def __init__(self, obj, db=None, constraint=None, fields=None, update=None):
         self._obj = obj
         self._db = db
-        self._ignore_conflicts = IgnoreConflictSuffix(constraint, fields)
+        self._ignore_conflicts = IgnoreConflictSuffix(
+            constraint, fields, update
+        )
 
         if self._db is None:
             self._db = self._model._default_manager.db
@@ -102,11 +116,11 @@ class Upsert:
 
 
 class PgUpsertManager(django.db.models.Manager):
-    def insert_conflict(self, data, constraint=None, fields=None):
+    def insert_conflict(self, data, constraint=None, fields=None, update=None):
         obj = self.model(**data)
-        return Upsert(obj, self.db, constraint, fields).execute()
+        return Upsert(obj, self.db, constraint, fields, update).execute()
 
 
-def insert_conflict(obj, constraint=None, fields=None):
+def insert_conflict(obj, constraint=None, fields=None, update=None):
     db = obj._meta.default_manager.db
-    return Upsert(obj, db, constraint, fields).execute()
+    return Upsert(obj, db, constraint, fields, update).execute()
