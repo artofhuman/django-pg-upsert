@@ -27,10 +27,16 @@ jobs:
         python -m pip install --upgrade pip
         curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
         source $HOME/.poetry/env
-        make install
+
+    - name: Configure poetry
+      run: |
+        python -m poetry config virtualenvs.in-project false
+
     - name: Lint with flake8
       run: |
+        python -m poetry --help
         make lint
+
     - name: Test with pytest
       run: |
         make test
