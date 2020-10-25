@@ -14,3 +14,6 @@ test:
 
 install:
 	poetry install
+
+lint:
+	flake8 django_pg_upsert/
