@@ -3,8 +3,6 @@ __version__ = "0.1.0"
 
 import django.db
 from django.db import connection, connections
-from django.db import models, router
-from django.db.models.sql import InsertQuery
 from django.db.models.sql.compiler import SQLInsertCompiler
 
 
@@ -48,7 +46,7 @@ class IgnoreConflictSuffix:
         return self._DO_NOTHING
 
 
-class SQLUpsertCompiler(django.db.models.sql.compiler.SQLInsertCompiler):
+class SQLUpsertCompiler(SQLInsertCompiler):
     _REWRITE_PART = 'ON CONFLICT DO NOTHING'
 
     ignore_conflicts_suffix = None
