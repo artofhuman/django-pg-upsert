@@ -55,8 +55,5 @@ jobs:
         make lint
 
     - name: Test with pytest
-      # env:
-      #   POSTGRES_HOST: localhost
-      #   POSTGRES_PORT: 6432
       run: |
         make test
