@@ -10,7 +10,7 @@ compose-down:
 	${DOCKER_COMPOSE} down
 
 test:
-	pytest
+	poetry run pytest
 
 install:
 	poetry install
