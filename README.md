@@ -74,6 +74,29 @@ django_pg_upsert.insert_conflict(pet, constraint='pet_name_uniq')
 django_pg_upsert.insert_conflict(pet, fields='name')
 ```
 
+## Update
+
+``` python
+Pet.objects.insert_conflict(
+  data={"name": "dog", "age": 100},
+  fields=["name"],
+  update=["age"]
+)
+```
+or
+
+```python
+django_pg_upsert.insert_conflict(pet, fields='name', update=["age"])
+```
+
+```python
+[
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',
+  ("dog", 100),
+]
+
+```
+
 # Motivation
 
 [django-postgres-extra](https://github.com/SectorLabs/django-postgres-extra) has
