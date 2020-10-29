@@ -1,5 +1,7 @@
 # django-pg-upsert
 
+![build](https://github.com/artofhuman/django-pg-upsert/workflows/build/badge.svg)
+
 Support Postgres native upsert (INSERT ... ON CONFLICT) for django
 
 # Usage
