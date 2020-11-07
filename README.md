@@ -4,6 +4,10 @@
 
 Support Postgres native upsert (INSERT ... ON CONFLICT) for django
 
+# Installation
+
+`pip install django-pg-upsert`
+
 # Usage
 
 ## As a manager
