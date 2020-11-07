@@ -6,7 +6,7 @@ Support Postgres native upsert (INSERT ... ON CONFLICT) for django
 
 # Usage
 
-## As manager
+## As a manager
 ```python
 
 import django_pg_upsert
@@ -64,7 +64,7 @@ Pet.objects.insert_conflict(
 
 ```
 
-## As standalone function
+## As a standalone function
 
 ```python
 import djnago_pg_upsert
@@ -103,7 +103,7 @@ django_pg_upsert.insert_conflict(pet, fields='name', update=["age"])
 
 [django-postgres-extra](https://github.com/SectorLabs/django-postgres-extra) has
 a pg upsert method as well, but this package requires redefinition for DB backed
-in django settings which sometimes is not possible.
+in Django settings which sometimes is not possible.
 
 django-pg-upsert is designed to solve only one problem (depends only from django) and is not a Swiss knife.
 

@@ -12,6 +12,9 @@ compose-down:
 test:
 	poetry run pytest
 
+tox:
+	tox
+
 install:
 	poetry install
 
