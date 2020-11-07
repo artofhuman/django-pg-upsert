@@ -42,10 +42,6 @@ jobs:
       run: |
         pip install tox tox-gh-actions
 
-    # - name: Lint with flake8
-    #   run: |
-    #     make lint
-
     - name: Test with tox
       run: |
         make tox
