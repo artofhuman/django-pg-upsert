@@ -41,10 +41,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install tox tox-gh-actions
-
     - name: Test with tox
-      run: |
-        make tox
+      run: make tox
       env:
         DJANGO: ${{ matrix.django }}
         TOXENV: ${{ matrix.toxenv }}
