@@ -111,7 +111,3 @@ a pg upsert method as well, but this package requires redefinition for DB backed
 in Django settings which sometimes is not possible.
 
 django-pg-upsert is designed to solve only one problem (depends only from django) and is not a Swiss knife.
-
-# Status
-
-This package under development and not release on PyPI
