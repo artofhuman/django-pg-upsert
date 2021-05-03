@@ -72,7 +72,7 @@ Pet.objects.insert_conflict(
 ## As a standalone function
 
 ```python
-import djnago_pg_upsert
+import django_pg_upsert
 
 pet = Pet(name='dog', age='12')
 
