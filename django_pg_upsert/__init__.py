@@ -92,7 +92,7 @@ class Upsert:
         return self._get_compiler().as_sql()
 
     def execute(self):
-        return self._get_compiler().execute_sql(return_id=False)
+        return self._get_compiler().execute_sql()
 
     def _get_compiler(self):
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
