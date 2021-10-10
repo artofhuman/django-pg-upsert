@@ -187,3 +187,77 @@ class TestInsertConflict:
         pet.refresh_from_db()
         assert pet.age == 100
         assert pet.name == "dog"
+
+
+@pytest.mark.django_db
+class TestBulkUpsert:
+    def assert_two_records(self):
+        records = models.Pet.objects.order_by('name')
+        assert len(records) == 2
+        assert records[0].age == 8
+        assert records[0].name == 'cat'
+        assert records[1].age == 12
+        assert records[1].name == 'dog'
+
+        return records
+
+    def test_bulk_upsert_without_arguments(self):
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 12})
+        Pet.objects.insert_conflict(data=[
+            {"name": "dog", "age": 20},
+            {"name": "cat", "age": 8}
+        ])
+
+        self.assert_two_records()
+
+    def test_bulk_standalone_method(self):
+        cat = models.Pet(age=8, name='cat')
+        dog = models.Pet(age=12, name='dog')
+
+        django_pg_upsert.insert_conflict([cat, dog])
+        django_pg_upsert.insert_conflict([cat, dog])
+
+        self.assert_two_records()
+
+    def test_bulk_update_on_conflict(self):
+        cat = models.Pet(age=3, name='cat')
+        dog = models.Pet(age=2, name='dog')
+
+        cat.save()
+        dog.save()
+
+        Pet.objects.insert_conflict(
+            data=[
+                {'name': 'dog', 'age': 12, 'alias_name': 'yoda'},
+                {'name': 'cat', 'age': 8, 'alias_name': 'grogu'}
+            ],
+            constraint="starwars_pet_name_key",
+            update=["age", "alias_name"])
+
+        records = self.assert_two_records()
+
+        assert records[0].alias_name == "grogu"
+        assert records[1].alias_name == "yoda"
+
+    def test_bulk_standalone_method_update(self):
+        cat = models.Pet(age=3, name='cat')
+        dog = models.Pet(age=2, name='dog')
+
+        cat.save()
+        dog.save()
+
+        cat.age = 8
+        cat.alias_name = "grogu"
+
+        dog.age = 12
+        dog.alias_name = "yoda"
+
+        django_pg_upsert.insert_conflict(
+            [cat, dog],
+            fields=["name"],
+            update=["age", "alias_name"])
+
+        records = self.assert_two_records()
+
+        assert records[0].alias_name == "grogu"
+        assert records[1].alias_name == "yoda"

@@ -6,6 +6,13 @@ from django.db import connection, connections
 from django.db.models.sql.compiler import SQLInsertCompiler
 
 
+def listify(var):
+    if isinstance(var, list):
+        return var
+    else:
+        return [var]
+
+
 class IgnoreConflictSuffix:
     _SQL = "ON CONFLICT {conflict_sql} {action_sql}"
     _DO_NOTHING = "DO NOTHING"
@@ -79,7 +86,7 @@ class UpsertQuery(django.db.models.sql.InsertQuery):
 
 class Upsert:
     def __init__(self, obj, db=None, constraint=None, fields=None, update=None):
-        self._obj = obj
+        self._obj = listify(obj)
         self._db = db
         self._ignore_conflicts = IgnoreConflictSuffix(
             constraint, fields, update
@@ -98,7 +105,7 @@ class Upsert:
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
 
         query = UpsertQuery(self._model, ignore_conflicts=True)
-        query.insert_values(fields, [self._obj], raw=False)
+        query.insert_values(fields, self._obj, raw=False)
 
         compiler: SQLUpsertCompiler = query.get_compiler(self._db)
         compiler.ignore_conflicts_suffix = self._ignore_conflicts
@@ -106,7 +113,7 @@ class Upsert:
 
     @property
     def _meta(self):
-        return self._obj._meta
+        return self._obj[0]._meta
 
     @property
     def _model(self):
@@ -115,10 +122,12 @@ class Upsert:
 
 class PgUpsertManager(django.db.models.Manager):
     def insert_conflict(self, data, constraint=None, fields=None, update=None):
-        obj = self.model(**data)
-        return Upsert(obj, self.db, constraint, fields, update).execute()
+        data = listify(data)
+        objects = [self.model(**model_data) for model_data in data]
+        return Upsert(objects, self.db, constraint, fields, update).execute()
 
 
 def insert_conflict(obj, constraint=None, fields=None, update=None):
-    db = obj._meta.default_manager.db
+    obj = listify(obj)
+    db = obj[0]._meta.default_manager.db
     return Upsert(obj, db, constraint, fields, update).execute()
