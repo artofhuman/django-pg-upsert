@@ -1,3 +1,7 @@
+0.3.1
+-----
+Relax django version to allow using package with django 2.x
+
 0.3.0
 -----
 Allows for bulk upserting, e.g.
