@@ -1,3 +1,7 @@
+0.4.0
+-----
+Allow to use with django 4.0
+
 0.3.1
 -----
 Relax django version to allow using package with django 2.x
