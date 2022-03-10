@@ -19,7 +19,7 @@ install:
 	poetry install
 
 lint:
-	poetry run flake8 django_pg_upsert/
+	poetry run flake8 django_pg_upsert/ tests/
 
 
 publish:
