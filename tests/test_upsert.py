@@ -21,7 +21,7 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',  # noqa
                 (
                     "dog",
                     None,
@@ -38,7 +38,7 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ON CONSTRAINT starwars_pet_name_key DO NOTHING',  # noqa
                 (
                     "dog",
                     None,
@@ -55,7 +55,7 @@ class TestSqlExpression:
 
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO NOTHING',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO NOTHING',  # noqa
                 (
                     "dog",
                     None,
@@ -71,7 +71,7 @@ class TestSqlExpression:
         sql = django_pg_upsert.Upsert(pet, fields=["name"], update=["age"]).as_sql()
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',  # noqa
                 (
                     "dog",
                     None,
@@ -167,7 +167,7 @@ class TestInsertConflict:
         Pet.objects.insert_conflict(
             data={"name": pet.name, "age": 100, "alias_name": "yoda"},
             constraint="starwars_pet_name_key",
-            update=["age", "alias_name"]
+            update=["age", "alias_name"],
         )
 
         records = models.Pet.objects.all()
@@ -192,27 +192,26 @@ class TestInsertConflict:
 @pytest.mark.django_db
 class TestBulkUpsert:
     def assert_two_records(self):
-        records = models.Pet.objects.order_by('name')
+        records = models.Pet.objects.order_by("name")
         assert len(records) == 2
         assert records[0].age == 8
-        assert records[0].name == 'cat'
+        assert records[0].name == "cat"
         assert records[1].age == 12
-        assert records[1].name == 'dog'
+        assert records[1].name == "dog"
 
         return records
 
     def test_bulk_upsert_without_arguments(self):
         Pet.objects.insert_conflict(data={"name": "dog", "age": 12})
-        Pet.objects.insert_conflict(data=[
-            {"name": "dog", "age": 20},
-            {"name": "cat", "age": 8}
-        ])
+        Pet.objects.insert_conflict(
+            data=[{"name": "dog", "age": 20}, {"name": "cat", "age": 8}]
+        )
 
         self.assert_two_records()
 
     def test_bulk_standalone_method(self):
-        cat = models.Pet(age=8, name='cat')
-        dog = models.Pet(age=12, name='dog')
+        cat = models.Pet(age=8, name="cat")
+        dog = models.Pet(age=12, name="dog")
 
         django_pg_upsert.insert_conflict([cat, dog])
         django_pg_upsert.insert_conflict([cat, dog])
@@ -220,19 +219,20 @@ class TestBulkUpsert:
         self.assert_two_records()
 
     def test_bulk_update_on_conflict(self):
-        cat = models.Pet(age=3, name='cat')
-        dog = models.Pet(age=2, name='dog')
+        cat = models.Pet(age=3, name="cat")
+        dog = models.Pet(age=2, name="dog")
 
         cat.save()
         dog.save()
 
         Pet.objects.insert_conflict(
             data=[
-                {'name': 'dog', 'age': 12, 'alias_name': 'yoda'},
-                {'name': 'cat', 'age': 8, 'alias_name': 'grogu'}
+                {"name": "dog", "age": 12, "alias_name": "yoda"},
+                {"name": "cat", "age": 8, "alias_name": "grogu"},
             ],
             constraint="starwars_pet_name_key",
-            update=["age", "alias_name"])
+            update=["age", "alias_name"],
+        )
 
         records = self.assert_two_records()
 
@@ -240,8 +240,8 @@ class TestBulkUpsert:
         assert records[1].alias_name == "yoda"
 
     def test_bulk_standalone_method_update(self):
-        cat = models.Pet(age=3, name='cat')
-        dog = models.Pet(age=2, name='dog')
+        cat = models.Pet(age=3, name="cat")
+        dog = models.Pet(age=2, name="dog")
 
         cat.save()
         dog.save()
@@ -253,9 +253,8 @@ class TestBulkUpsert:
         dog.alias_name = "yoda"
 
         django_pg_upsert.insert_conflict(
-            [cat, dog],
-            fields=["name"],
-            update=["age", "alias_name"])
+            [cat, dog], fields=["name"], update=["age", "alias_name"]
+        )
 
         records = self.assert_two_records()
 

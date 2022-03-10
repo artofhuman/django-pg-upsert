@@ -23,12 +23,11 @@ class IgnoreConflictSuffix:
         self._update = update
 
         if self._constraint and self._fields:
-            raise ValueError('Only fields or constraint args can be used')
+            raise ValueError("Only fields or constraint args can be used")
 
     def as_sql(self):
         return self._SQL.format(
-            conflict_sql=self._conflict_sql,
-            action_sql=self._action_sql
+            conflict_sql=self._conflict_sql, action_sql=self._action_sql
         )
 
     def has_conflict_target(self):
@@ -40,21 +39,21 @@ class IgnoreConflictSuffix:
             return "ON CONSTRAINT " + self._constraint
 
         if self._fields:
-            fields = ', '.join([connection.ops.quote_name(f) for f in self._fields])
-            return '(%s)' % fields
+            fields = ", ".join([connection.ops.quote_name(f) for f in self._fields])
+            return "(%s)" % fields
 
-        return ''
+        return ""
 
     @property
     def _action_sql(self) -> str:
         if self._update:
-            fields = ', '.join([f"{f} = EXCLUDED.{f}" for f in self._update])
+            fields = ", ".join([f"{f} = EXCLUDED.{f}" for f in self._update])
             return f"DO UPDATE SET {fields}"
         return self._DO_NOTHING
 
 
 class SQLUpsertCompiler(SQLInsertCompiler):
-    _REWRITE_PART = 'ON CONFLICT DO NOTHING'
+    _REWRITE_PART = "ON CONFLICT DO NOTHING"
 
     ignore_conflicts_suffix = None
 
@@ -88,9 +87,7 @@ class Upsert:
     def __init__(self, obj, db=None, constraint=None, fields=None, update=None):
         self._obj = listify(obj)
         self._db = db
-        self._ignore_conflicts = IgnoreConflictSuffix(
-            constraint, fields, update
-        )
+        self._ignore_conflicts = IgnoreConflictSuffix(constraint, fields, update)
 
         if self._db is None:
             self._db = self._model._default_manager.db
