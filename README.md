@@ -2,6 +2,8 @@
 
 ![build](https://github.com/artofhuman/django-pg-upsert/workflows/build/badge.svg)
 [![PyPI version](https://badge.fury.io/py/django-pg-upsert.svg)](https://badge.fury.io/py/django-pg-upsert)
+[![Downloads](https://img.shields.io/pypi/dm/django-pg-upsert)](https://img.shields.io/pypi/dm/django-pg-upsert)
+
 
 Support Postgres native upsert (INSERT ... ON CONFLICT) for django
 
