@@ -1,3 +1,7 @@
+0.5.0
+-----
+Ulock python upper bound
+
 0.4.0
 -----
 Allow to use with django 4.0
