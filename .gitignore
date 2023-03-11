@@ -6,3 +6,4 @@ dist/
 .devcontainer
 .vscode/
 .tox/
+.python-version

@@ -28,8 +28,9 @@ jobs:
           - 5432:5432
 
     strategy:
+      fail-fast: false
       matrix:
-        django: ["2.0", "2.1", "2.2", "3.0", "3.1", "3.2", "4.0"]
+        django: ["2.2", "3.0", "3.1", "3.2", "4.0"]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
@@ -42,7 +43,7 @@ jobs:
       run: |
         pip install tox tox-gh-actions
     - name: Test with tox
-      run: make tox
+      run: tox
       env:
         DJANGO: ${{ matrix.django }}
         TOXENV: ${{ matrix.toxenv }}
