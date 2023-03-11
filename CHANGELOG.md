@@ -1,6 +1,6 @@
 0.5.0
 -----
-Ulock python upper bound
+Unlock python upper bound
 
 0.4.0
 -----
