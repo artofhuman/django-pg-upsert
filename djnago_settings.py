@@ -6,6 +6,8 @@ sys.path.insert(0, ROOT_PATH + "/tests/")
 
 SECRET_KEY = 1
 
+USE_TZ = True
+
 INSTALLED_APPS = [
     "tests.starwars",
 ]
