@@ -5,6 +5,12 @@ import django.db
 from django.db import connection, connections
 from django.db.models.sql.compiler import SQLInsertCompiler
 
+try:
+    # Django >= 4.1
+    from django.db.models.constants import OnConflict
+except ImportError:
+    OnConflict = None
+
 
 def listify(var):
     if isinstance(var, list):
@@ -101,12 +107,18 @@ class Upsert:
     def _get_compiler(self):
         fields = [f for f in self._meta.concrete_fields if not f.auto_created]
 
-        query = UpsertQuery(self._model, ignore_conflicts=True)
+        query = UpsertQuery(self._model, **self._ignore_conflicts_kwargs())
         query.insert_values(fields, self._obj, raw=False)
 
         compiler: SQLUpsertCompiler = query.get_compiler(self._db)
         compiler.ignore_conflicts_suffix = self._ignore_conflicts
         return compiler
+
+    @staticmethod
+    def _ignore_conflicts_kwargs():
+        if OnConflict is None:
+            return {"ignore_conflicts": True}
+        return {"on_conflict": OnConflict.IGNORE}
 
     @property
     def _meta(self):

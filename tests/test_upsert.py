@@ -26,8 +26,8 @@ class TestSqlExpression:
                     "dog",
                     None,
                     12,
-                    datetime.datetime(2020, 1, 1, 12, 0),
-                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
                     None,
                 ),
             )
@@ -43,8 +43,8 @@ class TestSqlExpression:
                     "dog",
                     None,
                     12,
-                    datetime.datetime(2020, 1, 1, 12, 0),
-                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
                     None,
                 ),
             )
@@ -60,8 +60,8 @@ class TestSqlExpression:
                     "dog",
                     None,
                     12,
-                    datetime.datetime(2020, 1, 1, 12, 0),
-                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
                     None,
                 ),
             )
@@ -76,8 +76,8 @@ class TestSqlExpression:
                     "dog",
                     None,
                     12,
-                    datetime.datetime(2020, 1, 1, 12, 0),
-                    datetime.datetime(2020, 1, 1, 12, 0),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
                     None,
                 ),
             )
