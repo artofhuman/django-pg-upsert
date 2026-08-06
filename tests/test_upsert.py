@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 from freezegun import freeze_time
+from django.db.models import Q
 from django.db.utils import ProgrammingError
 
 import django_pg_upsert
@@ -82,6 +83,52 @@ class TestSqlExpression:
                 ),
             )
         ]
+
+    def test_with_update_where_q_object(self, pet):
+        sql = django_pg_upsert.Upsert(
+            pet, fields=["name"], update=["age"], update_where=Q(age__lt=100)
+        ).as_sql()
+        assert sql == [
+            (
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE "starwars_pet"."age" < %s',  # noqa
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    None,
+                    100,
+                ),
+            )
+        ]
+
+    def test_with_update_where_raw_sql(self, pet):
+        sql = django_pg_upsert.Upsert(
+            pet,
+            fields=["name"],
+            update=["age"],
+            update_where="EXCLUDED.age > starwars_pet.age",
+        ).as_sql()
+        assert sql == [
+            (
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE EXCLUDED.age > starwars_pet.age',  # noqa
+                (
+                    "dog",
+                    None,
+                    12,
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc),
+                    None,
+                ),
+            )
+        ]
+
+    def test_update_where_without_update(self, pet):
+        with pytest.raises(ValueError):
+            django_pg_upsert.Upsert(
+                pet, fields=["name"], update_where=Q(age__lt=100)
+            ).as_sql()
 
 
 @pytest.mark.django_db
@@ -177,6 +224,62 @@ class TestInsertConflict:
         assert pet.alias_name == "yoda"
         assert pet.name == "dog"
 
+    def test_update_on_conflict_with_update_where(self, pet):
+        pet.save()
+
+        Pet.objects.insert_conflict(
+            data={"name": pet.name, "age": 100},
+            fields=["name"],
+            update=["age"],
+            update_where=Q(age__gt=50),
+        )
+
+        pet.refresh_from_db()
+        assert pet.age == 12
+
+        Pet.objects.insert_conflict(
+            data={"name": pet.name, "age": 100},
+            fields=["name"],
+            update=["age"],
+            update_where=Q(age__lt=50),
+        )
+
+        pet.refresh_from_db()
+        assert pet.age == 100
+
+    def test_update_on_conflict_with_raw_update_where(self, pet):
+        pet.save()
+
+        Pet.objects.insert_conflict(
+            data={"name": pet.name, "age": 5},
+            fields=["name"],
+            update=["age"],
+            update_where="EXCLUDED.age > starwars_pet.age",
+        )
+
+        pet.refresh_from_db()
+        assert pet.age == 12
+
+        Pet.objects.insert_conflict(
+            data={"name": pet.name, "age": 100},
+            fields=["name"],
+            update=["age"],
+            update_where="EXCLUDED.age > starwars_pet.age",
+        )
+
+        pet.refresh_from_db()
+        assert pet.age == 100
+
+    def test_standalone_method_update_where(self, pet):
+        pet.save()
+        pet.age = 100
+
+        django_pg_upsert.insert_conflict(
+            pet, fields=["name"], update=["age"], update_where=Q(age__gt=50)
+        )
+        pet.refresh_from_db()
+        assert pet.age == 12
+
     def test_standalone_method_update(self, pet):
         pet.save()
         pet.age = 100
@@ -238,6 +341,24 @@ class TestBulkUpsert:
 
         assert records[0].alias_name == "grogu"
         assert records[1].alias_name == "yoda"
+
+    def test_bulk_update_on_conflict_with_update_where(self):
+        models.Pet(age=3, name="cat").save()
+        models.Pet(age=2, name="dog").save()
+
+        Pet.objects.insert_conflict(
+            data=[
+                {"name": "dog", "age": 12},
+                {"name": "cat", "age": 8},
+            ],
+            fields=["name"],
+            update=["age"],
+            update_where=Q(age__lt=3),
+        )
+
+        records = models.Pet.objects.order_by("name")
+        assert records[0].age == 3
+        assert records[1].age == 12
 
     def test_bulk_standalone_method_update(self):
         cat = models.Pet(age=3, name="cat")
