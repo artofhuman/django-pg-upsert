@@ -106,6 +106,46 @@ django_pg_upsert.insert_conflict(pet, fields='name', update=["age"])
 
 ```
 
+## Update with condition
+
+The `update_where` argument restricts which existing rows are updated
+(`ON CONFLICT ... DO UPDATE SET ... WHERE ...`). It accepts a `Q` object
+
+``` python
+from django.db.models import Q
+
+Pet.objects.insert_conflict(
+  data={"name": "dog", "age": 100},
+  fields=["name"],
+  update=["age"],
+  update_where=Q(age__lt=100),
+)
+
+[
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE "pets"."age" < %s',
+  ("dog", 100, 100),
+]
+```
+
+or a raw sql string, which is useful to reference the proposed row via `EXCLUDED`
+
+``` python
+django_pg_upsert.insert_conflict(
+  pet,
+  fields=["name"],
+  update=["age"],
+  update_where="EXCLUDED.age > pets.age",
+)
+
+[
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE EXCLUDED.age > pets.age',
+  ("dog", 100),
+]
+```
+
+A raw string is inlined into the statement as is, so never build it from
+user input.
+
 # Motivation
 
 [django-postgres-extra](https://github.com/SectorLabs/django-postgres-extra) has

@@ -1,3 +1,9 @@
+Unreleased
+----------
+Support where condition for update on conflict
+
+Support django 4.2, 5.2, 6.0, 6.1
+
 0.5.0
 -----
 Unlock python upper bound
