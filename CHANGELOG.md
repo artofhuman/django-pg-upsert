@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.6.0
+-----
 Support where condition for update on conflict
 
 Support django 4.2, 5.2, 6.0, 6.1
