@@ -1,8 +1,22 @@
 [tool.poetry]
 name = "django-pg-upsert"
-version = "0.6.0"
+version = "0.6.1"
 description = "Support Postgres native upsert (INSERT ... ON CONFLICT) for django"
 authors = ["Semyon Pupkov <mail@semyonpupkov.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/artofhuman/django-pg-upsert"
+repository = "https://github.com/artofhuman/django-pg-upsert"
+keywords = ["django", "postgres", "postgresql", "upsert", "on-conflict"]
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.9"

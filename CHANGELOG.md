@@ -1,3 +1,9 @@
+0.6.1
+-----
+Add the readme to the package metadata, so the PyPI page shows the documentation
+
+Add the license, project links, keywords, and classifiers to the package metadata
+
 0.6.0
 -----
 Support where condition for update on conflict
