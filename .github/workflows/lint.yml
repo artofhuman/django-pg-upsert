@@ -19,4 +19,4 @@ jobs:
     - name: Run lint
       run: tox
       env:
-        TOXENV: flake8
+        TOXENV: lint

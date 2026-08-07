@@ -19,7 +19,12 @@ install:
 	poetry install
 
 lint:
-	poetry run flake8 django_pg_upsert/ tests/
+	poetry run ruff check django_pg_upsert/ tests/
+	poetry run ruff format --check django_pg_upsert/ tests/
+
+fmt:
+	poetry run ruff check --fix django_pg_upsert/ tests/
+	poetry run ruff format django_pg_upsert/ tests/
 
 
 publish:

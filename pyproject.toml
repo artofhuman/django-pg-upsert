@@ -13,10 +13,73 @@ pytest = "^8.4"
 pytest-django = "^4.11"
 psycopg2-binary = "^2.9.10"
 freezegun = "^1.5"
-flake8 = "^7.3"
-black = "^25.1"
-flake8-black = "^0.3.6"
+ruff = "^0.16"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "djnago_settings"
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+# pycodestyle + pyflakes, matching the flake8 defaults this replaced.
+select = ["E", "F", "W"]
+
+[tool.tox]
+# Kept as legacy ini: tox-gh-actions does not read the native TOML config.
+legacy_tox_ini = """
+[tox]
+isolated_build = True
+envlist=
+    py{39,310,311,312}-django42,
+    py{310,311,312,313,314}-django52,
+    py{312,313,314}-django{60,61},
+    lint
+
+[gh-actions]
+python =
+    3.9: py39
+    3.10: py310
+    3.11: py311
+    3.12: py312
+    3.13: py313
+    3.14: py314
+
+[gh-actions:env]
+DJANGO =
+    4.2: django42
+    5.2: django52
+    6.0: django60
+    6.1: django61
+
+[testenv:lint]
+basepython = python3.13
+deps = ruff
+commands =
+    ruff check django_pg_upsert/ tests/
+    ruff format --check django_pg_upsert/ tests/
+
+[testenv]
+setenv =
+    PYTHONPATH = {toxinidir}:{env:PYTHONPATH:}
+    DJANGO_SETTINGS_MODULE=djnago_settings
+
+deps =
+    pytest
+    pytest-django
+    psycopg2-binary
+    freezegun
+    django42: Django>=4.2,<5.0
+    # pytest-django >= 4.12 dropped Django 4.2
+    django42: pytest-django<4.12
+    django52: Django>=5.2,<6.0
+    django60: Django>=6.0,<6.1
+    django61: Django>=6.1,<6.2
+
+commands = pytest
+"""
