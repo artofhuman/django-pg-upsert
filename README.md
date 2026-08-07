@@ -5,7 +5,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/django-pg-upsert)](https://img.shields.io/pypi/dm/django-pg-upsert)
 
 
-Support Postgres native upsert (INSERT ... ON CONFLICT) for django
+This package adds support for the native Postgres upsert (INSERT ... ON CONFLICT) to Django.
 
 # Installation
 
@@ -15,10 +15,10 @@ Support Postgres native upsert (INSERT ... ON CONFLICT) for django
 
 ## As a manager
 ```python
-
-import django_pg_upsert
-
 from django.db import models
+
+from django_pg_upsert import PgUpsertManager
+
 
 class Pet(models.Model):
     name = models.CharField(max_length=30, unique=True)
@@ -29,11 +29,13 @@ class Pet(models.Model):
 
 Pet.objects.insert_conflict(data={"name": "dog", "age": 12})
 
-# second query don't insert record to db and don't raise error
+# The second query does not insert a record and does not raise an error.
 Pet.objects.insert_conflict(data={"name": "dog", "age": 20})
+```
 
-# This code produce SQL statement
+This code produces the SQL statement:
 
+```python
 [
   'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT DO NOTHING',
   ("dog", 12),
@@ -49,7 +51,7 @@ Pet.objects.insert_conflict(
 )
 
 [
-  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONSTRAINT pet_name_uniq DO NOTHING',
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT ON CONSTRAINT pet_name_uniq DO NOTHING',
   ("dog", 12),
 ]
 
@@ -65,7 +67,7 @@ Pet.objects.insert_conflict(
 )
 
 [
-  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONSTRAINT ("name") DO NOTHING',
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s) ON CONFLICT ("name") DO NOTHING',
   ("dog", 12),
 ]
 
@@ -76,11 +78,11 @@ Pet.objects.insert_conflict(
 ```python
 import django_pg_upsert
 
-pet = Pet(name='dog', age='12')
+pet = Pet(name="dog", age=12)
 
 django_pg_upsert.insert_conflict(pet)
-django_pg_upsert.insert_conflict(pet, constraint='pet_name_uniq')
-django_pg_upsert.insert_conflict(pet, fields='name')
+django_pg_upsert.insert_conflict(pet, constraint="pet_name_uniq")
+django_pg_upsert.insert_conflict(pet, fields=["name"])
 ```
 
 ## Update
@@ -95,7 +97,7 @@ Pet.objects.insert_conflict(
 or
 
 ```python
-django_pg_upsert.insert_conflict(pet, fields='name', update=["age"])
+django_pg_upsert.insert_conflict(pet, fields=["name"], update=["age"])
 ```
 
 ```python
@@ -109,7 +111,7 @@ django_pg_upsert.insert_conflict(pet, fields='name', update=["age"])
 ## Update with condition
 
 The `update_where` argument restricts which existing rows are updated
-(`ON CONFLICT ... DO UPDATE SET ... WHERE ...`). It accepts a `Q` object
+(`ON CONFLICT ... DO UPDATE SET ... WHERE ...`). It accepts a `Q` object.
 
 ``` python
 from django.db.models import Q
@@ -127,7 +129,8 @@ Pet.objects.insert_conflict(
 ]
 ```
 
-or a raw sql string, which is useful to reference the proposed row via `EXCLUDED`
+The argument also accepts a raw SQL string. Use a raw string to reference the
+proposed row through `EXCLUDED`.
 
 ``` python
 django_pg_upsert.insert_conflict(
@@ -143,13 +146,48 @@ django_pg_upsert.insert_conflict(
 ]
 ```
 
-A raw string is inlined into the statement as is, so never build it from
-user input.
+Do not build a raw string from user input. The package inlines the string into
+the statement as is.
+
+## Batch
+
+To insert many rows in one statement, pass a list. The manager accepts a list
+of dictionaries. The standalone function accepts a list of model objects. All
+other arguments work as they do for a single row.
+
+``` python
+Pet.objects.insert_conflict(
+  data=[
+    {"name": "dog", "age": 12},
+    {"name": "cat", "age": 8},
+  ],
+  fields=["name"],
+  update=["age"],
+)
+```
+or
+
+```python
+dog = Pet(name="dog", age=12)
+cat = Pet(name="cat", age=8)
+
+django_pg_upsert.insert_conflict([dog, cat], fields=["name"], update=["age"])
+```
+
+Both calls produce one statement with one row set for each object:
+
+```python
+[
+  'INSERT INTO "pets" ("name", "age") VALUES (%s, %s), (%s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',
+  ("dog", 12, "cat", 8),
+]
+```
 
 # Motivation
 
-[django-postgres-extra](https://github.com/SectorLabs/django-postgres-extra) has
-a pg upsert method as well, but this package requires redefinition for DB backed
-in Django settings which sometimes is not possible.
+[django-postgres-extra](https://github.com/SectorLabs/django-postgres-extra) also
+has a pg upsert method, but that package requires a different DB backend in the
+Django settings. Sometimes this change is not possible.
 
-django-pg-upsert is designed to solve only one problem (depends only from django) and is not a Swiss knife.
+django-pg-upsert solves only one problem and depends only on Django. It is not a
+Swiss army knife.
