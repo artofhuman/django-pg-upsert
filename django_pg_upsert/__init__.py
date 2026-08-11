@@ -41,7 +41,7 @@ class IgnoreConflictSuffix:
 
         sql = self._SQL.format(
             conflict_sql=self._conflict_sql(connection),
-            action_sql=self._action_sql,
+            action_sql=self._action_sql(connection),
         )
 
         if where_sql:
@@ -62,10 +62,9 @@ class IgnoreConflictSuffix:
 
         return ""
 
-    @property
-    def _action_sql(self) -> str:
+    def _action_sql(self, connection) -> str:
         if self._update:
-            fields = ", ".join([f"{f} = EXCLUDED.{f}" for f in self._update])
+            fields = ", ".join([f"{connection.ops.quote_name(f)} = EXCLUDED.{connection.ops.quote_name(f)}" for f in self._update])
             return f"DO UPDATE SET {fields}"
         return self._DO_NOTHING
 
