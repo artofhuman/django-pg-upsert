@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-pg-upsert"
-version = "0.6.1"
+version = "0.6.2"
 description = "Support Postgres native upsert (INSERT ... ON CONFLICT) for django"
 authors = ["Semyon Pupkov <mail@semyonpupkov.com>"]
 readme = "README.md"

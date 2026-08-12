@@ -1,3 +1,7 @@
+0.6.2
+-----
+Quote the column names in the `DO UPDATE SET` clause, so you can update columns with a reserved name, for example `order`
+
 0.6.1
 -----
 Add the readme to the package metadata, so the PyPI page shows the documentation
