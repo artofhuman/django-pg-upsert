@@ -72,7 +72,7 @@ class TestSqlExpression:
         sql = django_pg_upsert.Upsert(pet, fields=["name"], update=["age"]).as_sql()
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age',  # noqa
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET "age" = EXCLUDED."age"',  # noqa
                 (
                     "dog",
                     None,
@@ -90,7 +90,7 @@ class TestSqlExpression:
         ).as_sql()
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE "starwars_pet"."age" < %s',  # noqa
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET "age" = EXCLUDED."age" WHERE "starwars_pet"."age" < %s',  # noqa
                 (
                     "dog",
                     None,
@@ -112,7 +112,7 @@ class TestSqlExpression:
         ).as_sql()
         assert sql == [
             (
-                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET age = EXCLUDED.age WHERE EXCLUDED.age > starwars_pet.age',  # noqa
+                'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET "age" = EXCLUDED."age" WHERE EXCLUDED.age > starwars_pet.age',  # noqa
                 (
                     "dog",
                     None,
