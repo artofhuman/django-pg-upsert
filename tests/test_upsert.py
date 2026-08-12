@@ -85,9 +85,7 @@ class TestSqlExpression:
         ]
 
     def test_with_update_where_q_object(self, pet):
-        sql = django_pg_upsert.Upsert(
-            pet, fields=["name"], update=["age"], update_where=Q(age__lt=100)
-        ).as_sql()
+        sql = django_pg_upsert.Upsert(pet, fields=["name"], update=["age"], update_where=Q(age__lt=100)).as_sql()
         assert sql == [
             (
                 'INSERT INTO "starwars_pet" ("name", "alias_name", "age", "created_at", "updated_at", "owner_id") VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT ("name") DO UPDATE SET "age" = EXCLUDED."age" WHERE "starwars_pet"."age" < %s',  # noqa
@@ -126,9 +124,7 @@ class TestSqlExpression:
 
     def test_update_where_without_update(self, pet):
         with pytest.raises(ValueError):
-            django_pg_upsert.Upsert(
-                pet, fields=["name"], update_where=Q(age__lt=100)
-            ).as_sql()
+            django_pg_upsert.Upsert(pet, fields=["name"], update_where=Q(age__lt=100)).as_sql()
 
 
 @pytest.mark.django_db
@@ -148,24 +144,16 @@ class TestInsertConflict:
         self.assert_create_single_record()
 
     def test_upsert_with_constraint_name(self):
-        Pet.objects.insert_conflict(
-            data={"name": "dog", "age": 12}, constraint="starwars_pet_name_key"
-        )
-        Pet.objects.insert_conflict(
-            data={"name": "dog", "age": 20}, constraint="starwars_pet_name_key"
-        )
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 12}, constraint="starwars_pet_name_key")
+        Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, constraint="starwars_pet_name_key")
 
         self.assert_create_single_record()
 
         with pytest.raises(ProgrammingError):
-            Pet.objects.insert_conflict(
-                data={"name": "dog", "age": 20}, constraint="unknown"
-            )
+            Pet.objects.insert_conflict(data={"name": "dog", "age": 20}, constraint="unknown")
 
     def test_not_raise_error(self, pet):
-        Pet.objects.insert_conflict(
-            data={"name": "yoda", "age": 12}, constraint="starwars_pet_name_key"
-        )
+        Pet.objects.insert_conflict(data={"name": "yoda", "age": 12}, constraint="starwars_pet_name_key")
 
         models.Pet(age=12, name="dog").save()
 
@@ -274,9 +262,7 @@ class TestInsertConflict:
         pet.save()
         pet.age = 100
 
-        django_pg_upsert.insert_conflict(
-            pet, fields=["name"], update=["age"], update_where=Q(age__gt=50)
-        )
+        django_pg_upsert.insert_conflict(pet, fields=["name"], update=["age"], update_where=Q(age__gt=50))
         pet.refresh_from_db()
         assert pet.age == 12
 
@@ -306,9 +292,7 @@ class TestBulkUpsert:
 
     def test_bulk_upsert_without_arguments(self):
         Pet.objects.insert_conflict(data={"name": "dog", "age": 12})
-        Pet.objects.insert_conflict(
-            data=[{"name": "dog", "age": 20}, {"name": "cat", "age": 8}]
-        )
+        Pet.objects.insert_conflict(data=[{"name": "dog", "age": 20}, {"name": "cat", "age": 8}])
 
         self.assert_two_records()
 
@@ -373,9 +357,7 @@ class TestBulkUpsert:
         dog.age = 12
         dog.alias_name = "yoda"
 
-        django_pg_upsert.insert_conflict(
-            [cat, dog], fields=["name"], update=["age", "alias_name"]
-        )
+        django_pg_upsert.insert_conflict([cat, dog], fields=["name"], update=["age", "alias_name"])
 
         records = self.assert_two_records()
 

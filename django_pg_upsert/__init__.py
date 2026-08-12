@@ -64,7 +64,9 @@ class IgnoreConflictSuffix:
 
     def _action_sql(self, connection) -> str:
         if self._update:
-            fields = ", ".join([f"{connection.ops.quote_name(f)} = EXCLUDED.{connection.ops.quote_name(f)}" for f in self._update])
+            fields = ", ".join(
+                [f"{connection.ops.quote_name(f)} = EXCLUDED.{connection.ops.quote_name(f)}" for f in self._update]
+            )
             return f"DO UPDATE SET {fields}"
         return self._DO_NOTHING
 
@@ -91,9 +93,7 @@ class SQLUpsertCompiler(SQLInsertCompiler):
         sql = super().as_sql()
 
         if self.ignore_conflicts_suffix.has_conflict_target():
-            conflict_part, conflict_params = self.ignore_conflicts_suffix.as_sql(
-                self.query.model, self.connection
-            )
+            conflict_part, conflict_params = self.ignore_conflicts_suffix.as_sql(self.query.model, self.connection)
 
             return [
                 (
@@ -136,9 +136,7 @@ class Upsert:
     ):
         self._obj = listify(obj)
         self._db = db
-        self._ignore_conflicts = IgnoreConflictSuffix(
-            constraint, fields, update, update_where
-        )
+        self._ignore_conflicts = IgnoreConflictSuffix(constraint, fields, update, update_where)
 
         if self._db is None:
             self._db = self._model._default_manager.db
@@ -175,14 +173,10 @@ class Upsert:
 
 
 class PgUpsertManager(django.db.models.Manager):
-    def insert_conflict(
-        self, data, constraint=None, fields=None, update=None, update_where=None
-    ):
+    def insert_conflict(self, data, constraint=None, fields=None, update=None, update_where=None):
         data = listify(data)
         objects = [self.model(**model_data) for model_data in data]
-        return Upsert(
-            objects, self.db, constraint, fields, update, update_where
-        ).execute()
+        return Upsert(objects, self.db, constraint, fields, update, update_where).execute()
 
 
 def insert_conflict(obj, constraint=None, fields=None, update=None, update_where=None):
